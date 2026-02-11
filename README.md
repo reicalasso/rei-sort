@@ -9,10 +9,11 @@ Rei Sort is a comparison-based, general-purpose sorting algorithm that adapts it
 - **Adaptive Strategy Selection**
   - Already sorted → O(n) early exit
   - Reverse sorted → O(n) reverse operation
-  - Small arrays (≤20) → Insertion sort
+  - Small arrays (≤20) → Insertion sort (optimized with Binary Search)
   - Large arrays → Iterative introsort
 
 - **Advanced Optimizations**
+  - **In-Place Permutation** for key-based sorting (Memory optimized from 2N to N)
   - **3-way partition** (Dutch National Flag) for handling duplicates efficiently
   - **Median-of-3** pivot selection
   - **Heapsort fallback** for worst-case O(n log n) guarantee
@@ -21,9 +22,10 @@ Rei Sort is a comparison-based, general-purpose sorting algorithm that adapts it
   - **Header-only** C++ library (zero overhead)
 
 - **Flexible API**
-  - Works with any comparable type
+  - Uses C++20 Concepts for better type safety
+  - Works with any random access iterator
   - Custom comparators support
-  - Key-based sorting (Schwartzian transform)
+  - Key-based sorting (Schwartzian transform with cycle decomposition)
   - NumPy array support (Python)
   - Thread-safe (GIL released during sorting)
 
@@ -170,7 +172,7 @@ g++ -std=c++20 -O3 -I. -o rei_example example.cpp && ./rei_example
 Standalone minimal example (from repo root):
 
 ```bash
-g++ -std=c++20 -O3 -I. -o example_simple example_simple.cpp && ./example_simple
+g++ -std=c++20 -O3 -Ireicore -o example_simple example_simple.cpp && ./example_simple
 # Output: Before: 5 2 8 1 9 3  →  After: 1 2 3 5 8 9
 ```
 
@@ -218,7 +220,7 @@ Input → Size Check → Detection (optional) → Algorithm Selection
                               n ≤ 20 (small)                    n > 20 (large)
                                     ↓                                 ↓
                             Insertion Sort                    Introsort
-                                                         (3-way partition)
+                          (Binary Search + Move)              (3-way partition)
                                                                  ↓
                                                         Depth limit exceeded?
                                                                  ↓
@@ -269,7 +271,7 @@ Instead of recursing on equal elements, we skip them entirely, providing **O(n)*
 ```cpp
 namespace rei {
     // Sort range [first, last)
-    template <typename RandomIt, typename Compare = std::less<>>
+    template <std::random_access_iterator RandomIt, typename Compare = std::less<>>
     void rei_sort(RandomIt first, RandomIt last,
                   Compare comp = Compare{},
                   bool detect_sorted = true);
@@ -281,7 +283,7 @@ namespace rei {
                   bool detect_sorted = true);
 
     // Sort by key (Schwartzian transform)
-    template <typename RandomIt, typename KeyFunc, typename Compare = std::less<>>
+    template <std::random_access_iterator RandomIt, typename KeyFunc, typename Compare = std::less<>>
     void rei_sort_by_key(RandomIt first, RandomIt last,
                          KeyFunc key_func,
                          Compare comp = Compare{});

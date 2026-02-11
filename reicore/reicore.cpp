@@ -57,7 +57,7 @@ void sort_python_list(py::list& lst, bool detect_sorted) {
             sort_python_list_impl<std::string>(lst, detect_sorted);
         } else {
             // Fallback: use Python comparison (slower)
-            py::gil_scoped_release release;
+            // MUST hold GIL because comparator uses Python API!
             std::sort(lst.begin(), lst.end(), [](py::handle a, py::handle b) {
                 return a.attr("__lt__")(b).cast<bool>();
             });

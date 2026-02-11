@@ -4,7 +4,7 @@
  * Features:
  * - Header-only template library
  * - Adaptive: sorted/reverse detection
- * - Small arrays → Insertion sort
+ * - Small arrays → Insertion sort (Binary Search optimized)
  * - Large arrays → Iterative introsort with 3-way partition
  * - Heapsort fallback
  * - Custom comparator support
@@ -18,6 +18,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <functional>
 #include <iterator>
 #include <type_traits>
@@ -34,7 +35,7 @@ inline constexpr int INTROSORT_DEPTH_FACTOR = 2;
 // SORTED/REVERSE DETECTION (Single Pass)
 // ============================================================================
 
-template <typename RandomIt, typename Compare>
+template <std::random_access_iterator RandomIt, typename Compare>
 inline std::pair<bool, bool> scan_sorted_and_reverse(RandomIt first, RandomIt last, Compare comp) {
     if (first == last || std::next(first) == last) {
         return {true, true};
@@ -63,24 +64,25 @@ inline std::pair<bool, bool> scan_sorted_and_reverse(RandomIt first, RandomIt la
 
 // ============================================================================
 // INSERTION SORT (Optimized for small arrays)
+// Uses Binary Search (std::upper_bound) for fewer comparisons
 // ============================================================================
 
-template <typename RandomIt, typename Compare>
+template <std::random_access_iterator RandomIt, typename Compare>
 inline void insertion_sort(RandomIt first, RandomIt last, Compare comp) {
     if (first == last) return;
 
     for (auto i = std::next(first); i != last; ++i) {
         auto value = std::move(*i);
-        auto j = i;
 
-        // Binary search could be used here, but linear search
-        // is often faster for small INSERTION_THRESHOLD values
-        while (j != first && comp(value, *std::prev(j))) {
-            *j = std::move(*std::prev(j));
-            --j;
-        }
+        // Binary search for insertion point
+        // upper_bound returns the first position where value < element is true
+        // (i.e., element > value). We insert *before* that.
+        auto pos = std::upper_bound(first, i, value, comp);
 
-        *j = std::move(value);
+        // Shift elements to right to make room
+        std::move_backward(pos, i, std::next(i));
+
+        *pos = std::move(value);
     }
 }
 
@@ -88,7 +90,7 @@ inline void insertion_sort(RandomIt first, RandomIt last, Compare comp) {
 // MEDIAN-OF-THREE PIVOT SELECTION
 // ============================================================================
 
-template <typename RandomIt, typename Compare>
+template <std::random_access_iterator RandomIt, typename Compare>
 inline RandomIt median_of_three(RandomIt a, RandomIt b, RandomIt c, Compare comp) {
     // Returns iterator to median value
     if (comp(*a, *b)) {
@@ -107,7 +109,7 @@ inline RandomIt median_of_three(RandomIt a, RandomIt b, RandomIt c, Compare comp
 // Handles duplicates efficiently - major optimization for repeated values
 // ============================================================================
 
-template <typename RandomIt, typename Compare>
+template <std::random_access_iterator RandomIt, typename Compare>
 inline std::pair<RandomIt, RandomIt> partition_3way(RandomIt first, RandomIt last, Compare comp) {
     if (first == last) return {first, first};
 
@@ -147,7 +149,7 @@ inline std::pair<RandomIt, RandomIt> partition_3way(RandomIt first, RandomIt las
 // HEAPSORT (Fallback for deep recursion)
 // ============================================================================
 
-template <typename RandomIt, typename Compare>
+template <std::random_access_iterator RandomIt, typename Compare>
 inline void sift_down(RandomIt first, RandomIt last, RandomIt root, Compare comp) {
     auto size = std::distance(first, last);
     auto root_idx = std::distance(first, root);
@@ -172,7 +174,7 @@ inline void sift_down(RandomIt first, RandomIt last, RandomIt root, Compare comp
     }
 }
 
-template <typename RandomIt, typename Compare>
+template <std::random_access_iterator RandomIt, typename Compare>
 inline void heapify(RandomIt first, RandomIt last, Compare comp) {
     auto size = std::distance(first, last);
     if (size <= 1) return;
@@ -184,7 +186,7 @@ inline void heapify(RandomIt first, RandomIt last, Compare comp) {
     }
 }
 
-template <typename RandomIt, typename Compare>
+template <std::random_access_iterator RandomIt, typename Compare>
 inline void heapsort_range(RandomIt first, RandomIt last, Compare comp) {
     if (first == last) return;
 
@@ -203,7 +205,7 @@ inline void heapsort_range(RandomIt first, RandomIt last, Compare comp) {
 // Iterative to avoid stack overflow on large arrays
 // ============================================================================
 
-template <typename RandomIt, typename Compare>
+template <std::random_access_iterator RandomIt, typename Compare>
 inline void introsort_iterative(RandomIt first, RandomIt last, Compare comp) {
     if (first == last) return;
 
@@ -266,7 +268,7 @@ inline void introsort_iterative(RandomIt first, RandomIt last, Compare comp) {
 /**
  * rei_sort implementation (detection enabled)
  */
-template <typename RandomIt, typename Compare>
+template <std::random_access_iterator RandomIt, typename Compare>
 inline void rei_sort_impl(RandomIt first, RandomIt last, Compare comp, bool detect_sorted) {
     auto size = std::distance(first, last);
 
@@ -301,8 +303,9 @@ inline void rei_sort_impl(RandomIt first, RandomIt last, Compare comp, bool dete
 /**
  * Public API: rei_sort with custom comparator
  */
-template <typename RandomIt, typename Compare = std::less<>>
+template <std::random_access_iterator RandomIt, typename Compare = std::less<>>
 inline void rei_sort(RandomIt first, RandomIt last, Compare comp = Compare{}, bool detect_sorted = true) {
+    static_assert(std::random_access_iterator<RandomIt>, "rei_sort requires random access iterator");
     rei_sort_impl(first, last, comp, detect_sorted);
 }
 
@@ -316,16 +319,18 @@ inline void rei_sort(Container& container, Compare comp = Compare{}, bool detect
 
 /**
  * Convenience: rei_sort with projection (key function)
- * Uses Schwartzian transform (decorate-sort-undecorate)
+ * Uses Schwartzian transform (decorate-sort-undecorate) and in-place permutation
  */
-template <typename RandomIt, typename KeyFunc, typename Compare = std::less<>>
+template <std::random_access_iterator RandomIt, typename KeyFunc, typename Compare = std::less<>>
 inline void rei_sort_by_key(RandomIt first, RandomIt last, KeyFunc key_func, Compare comp = Compare{}) {
+    static_assert(std::random_access_iterator<RandomIt>, "rei_sort_by_key requires random access iterator");
     using ValueType = typename std::iterator_traits<RandomIt>::value_type;
     using KeyType = std::invoke_result_t<KeyFunc, ValueType>;
 
     // Decorate: create pairs of (key, index)
     std::vector<std::pair<KeyType, std::size_t>> decorated;
-    decorated.reserve(std::distance(first, last));
+    auto size = std::distance(first, last);
+    decorated.reserve(size);
 
     std::size_t idx = 0;
     for (auto it = first; it != last; ++it, ++idx) {
@@ -338,15 +343,28 @@ inline void rei_sort_by_key(RandomIt first, RandomIt last, KeyFunc key_func, Com
                  return comp(a.first, b.first);
              });
 
-    // Undecorate: reorder original elements
-    std::vector<ValueType> temp;
-    temp.reserve(decorated.size());
-
-    for (const auto& [key, orig_idx] : decorated) {
-        temp.push_back(std::move(*std::next(first, orig_idx)));
+    // Undecorate: in-place permutation (Cycle Decomposition)
+    for (size_t i = 0; i < decorated.size(); ++i) {
+        size_t current = i;
+        // Check if cycle already processed (decorated[current].second == current means it's in correct place)
+        if (decorated[current].second != current) { 
+            ValueType target_val = std::move(*std::next(first, current)); 
+            
+            while (true) {
+                size_t source = decorated[current].second;
+                if (source == i) break; 
+                
+                *std::next(first, current) = std::move(*std::next(first, source));
+                
+                // Mark as processed
+                decorated[current].second = current; 
+                
+                current = source;
+            }
+            *std::next(first, current) = std::move(target_val);
+            decorated[current].second = current;
+        }
     }
-
-    std::move(temp.begin(), temp.end(), first);
 }
 
 } // namespace rei
