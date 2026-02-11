@@ -1,0 +1,43 @@
+# Build directories
+build/
+dist/
+*.egg-info/
+*.egg
+__pycache__/
+
+# Compiled files / binaries
+*.o
+*.so
+*.a
+*.dylib
+*.dll
+*.exe
+example_simple
+reicore/rei_test
+reicore/rei_benchmark
+reicore/rei_example
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+# Python
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+
+# IDE / editor
+.vscode/
+.idea/
+.claude/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
