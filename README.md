@@ -357,7 +357,54 @@ Reverse data: [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
 After rei_sort (detected and reversed): [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 ```
 
-## 📝 Requirements
+## � API Documentation
+
+The code is fully documented with **Doxygen** comments for API reference generation.
+
+### Generate Doxygen Documentation
+
+```bash
+# Install Doxygen (if not already installed)
+sudo pacman -S doxygen graphviz  # Arch/EndeavourOS
+sudo apt install doxygen graphviz  # Ubuntu/Debian
+brew install doxygen graphviz       # macOS
+
+# Generate HTML documentation (from project root)
+doxygen Doxyfile
+
+# Open in browser
+xdg-open docs/html/index.html  # Linux
+open docs/html/index.html      # macOS
+```
+
+All public functions include:
+- **@brief** - Short description
+- **@tparam** - Template parameter explanations
+- **@param** - Parameter descriptions
+- **@complexity** - Time and space complexity analysis
+- **@note** - Important usage notes
+- **@example** - Code examples
+
+## 🔮 Future Roadmap
+
+See [ROADMAP.md](ROADMAP.md) for detailed development plans. Highlights:
+
+### Version 2.1.0 (Q2 2026)
+- 🔹 **Stable Sort** - `rei_stable_sort` with order preservation
+- 🔹 **Enhanced Documentation** - MkDocs user guide + GitHub Pages
+
+### Version 2.2.0 (Q3 2026)
+- ⚡ **SIMD Optimizations** - AVX2/AVX-512 vectorization for primitives
+- 🔀 **Parallel Sorting** - `rei_par_sort` with multi-threading
+
+### Version 3.0.0 (Q4 2026)
+- 🎯 **String Specialization** - Radix sort for string arrays
+- 📊 **Partial Sort** - `rei_partial_sort` for top-K problems
+- 🧪 **Adaptive Timsort Mode** - Run detection for real-world data
+
+**Want to contribute?** Check [ROADMAP.md](ROADMAP.md) for details!
+
+## �📝 Requirements
 
 ### C++
 - C++20 compatible compiler (GCC 10+, Clang 10+, MSVC 2019+)

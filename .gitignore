@@ -23,6 +23,8 @@ CMakeFiles/
 cmake_install.cmake
 Makefile
 compile_commands.json
+CTestTestfile.cmake
+install_manifest.txt
 
 # Python
 *.pyc
@@ -30,14 +32,44 @@ compile_commands.json
 *.pyd
 .pytest_cache/
 .mypy_cache/
+.venv/
+venv/
+env/
+ENV/
+
+# Doxygen generated documentation
+docs/html/
+docs/latex/
+docs/xml/
+docs/man/
 
 # IDE / editor
 .vscode/
+!.vscode/c_cpp_properties.json
 .idea/
 .claude/
 *.swp
 *.swo
 *~
+.vs/
 
 # macOS
 .DS_Store
+._*
+
+# Linux
+*~
+.directory
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+*.bak

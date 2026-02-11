@@ -1,0 +1,67 @@
+# Doxyfile for Rei Sort
+# Minimal configuration for generating API documentation
+
+# Project information
+PROJECT_NAME           = "Rei Sort"
+PROJECT_NUMBER         = "2.0.1"
+PROJECT_BRIEF          = "High-Performance C++20 Hybrid Sorting Algorithm"
+
+# Input sources
+INPUT                  = reicore/rei_sort.hpp README.md
+USE_MDFILE_AS_MAINPAGE = README.md
+RECURSIVE              = YES
+FILE_PATTERNS          = *.hpp *.h *.cpp *.md
+EXCLUDE                = reicore/build reicore/__pycache__ .venv
+
+# Output options
+OUTPUT_DIRECTORY       = docs
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+HTML_OUTPUT            = html
+HTML_COLORSTYLE_HUE    = 220
+HTML_COLORSTYLE_SAT    = 120
+HTML_COLORSTYLE_GAMMA  = 80
+
+# Code extraction
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+EXTRACT_STATIC         = YES
+HIDE_UNDOC_MEMBERS     = NO
+HIDE_UNDOC_CLASSES     = NO
+
+# C++ specific
+CPP_CLI_SUPPORT        = NO
+INLINE_INFO            = YES
+SORT_MEMBER_DOCS       = YES
+SHOW_INCLUDE_FILES     = YES
+
+# Graph generation (requires Graphviz)
+HAVE_DOT               = YES
+DOT_CLEANUP            = YES
+CLASS_DIAGRAMS         = YES
+COLLABORATION_GRAPH    = YES
+CALL_GRAPH             = YES
+CALLER_GRAPH           = YES
+
+# Search functionality
+SEARCHENGINE           = YES
+SERVER_BASED_SEARCH    = NO
+
+# Markdown support
+MARKDOWN_SUPPORT       = YES
+AUTOLINK_SUPPORT       = YES
+
+# Warnings
+QUIET                  = NO
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
+
+# Miscellaneous
+FULL_PATH_NAMES        = NO
+JAVADOC_AUTOBRIEF      = YES
+QT_AUTOBRIEF           = YES
+MULTILINE_CPP_IS_BRIEF = NO
+INHERIT_DOCS           = YES
+TAB_SIZE               = 4
+OPTIMIZE_OUTPUT_FOR_C  = NO

@@ -28,13 +28,28 @@
 namespace rei {
 
 // Configuration constants
+/// @brief Threshold for switching from introsort to insertion sort
+/// @details Arrays smaller than or equal to this size use insertion sort for better cache performance
 inline constexpr std::size_t INSERTION_THRESHOLD = 20;
+
+/// @brief Depth factor for introsort recursion limit
+/// @details max_depth = INTROSORT_DEPTH_FACTOR * log2(n). Prevents worst-case O(n²) behavior
 inline constexpr int INTROSORT_DEPTH_FACTOR = 2;
 
 // ============================================================================
 // SORTED/REVERSE DETECTION (Single Pass)
 // ============================================================================
 
+/**
+ * @brief Detects if range is already sorted or reverse sorted in a single O(n) pass
+ * @tparam RandomIt Random access iterator type
+ * @tparam Compare Comparison function object type
+ * @param first Iterator to the beginning of the range
+ * @param last Iterator to the end of the range
+ * @param comp Comparison function object
+ * @return pair<is_sorted, is_reverse> - both can be true for empty/single-element arrays
+ * @note Early exits when both flags become false
+ */
 template <std::random_access_iterator RandomIt, typename Compare>
 inline std::pair<bool, bool> scan_sorted_and_reverse(RandomIt first, RandomIt last, Compare comp) {
     if (first == last || std::next(first) == last) {
@@ -67,6 +82,16 @@ inline std::pair<bool, bool> scan_sorted_and_reverse(RandomIt first, RandomIt la
 // Uses Binary Search (std::upper_bound) for fewer comparisons
 // ============================================================================
 
+/**
+ * @brief Insertion sort optimized with binary search for insertion point
+ * @tparam RandomIt Random access iterator type
+ * @tparam Compare Comparison function object type
+ * @param first Iterator to the beginning of the range
+ * @param last Iterator to the end of the range
+ * @param comp Comparison function object
+ * @complexity Time: O(n log n) comparisons, O(n²) moves; Space: O(1)
+ * @note Best for small arrays (≤20 elements) due to cache locality
+ */
 template <std::random_access_iterator RandomIt, typename Compare>
 inline void insertion_sort(RandomIt first, RandomIt last, Compare comp) {
     if (first == last) return;
@@ -301,7 +326,26 @@ inline void rei_sort_impl(RandomIt first, RandomIt last, Compare comp, bool dete
 }
 
 /**
- * Public API: rei_sort with custom comparator
+ * @brief Main rei_sort API - sorts a range using adaptive hybrid algorithm
+ * @tparam RandomIt Random access iterator type (enforced by C++20 concept)
+ * @tparam Compare Comparison function object type (default: std::less<>)
+ * @param first Iterator to the beginning of the range to sort
+ * @param last Iterator to the end of the range to sort
+ * @param comp Comparison function object (default: ascending order)
+ * @param detect_sorted Enable O(n) pre-scan for sorted/reversed data (default: true)
+ * 
+ * @complexity 
+ * - Best case: O(n) when already sorted or reverse sorted
+ * - Average: O(n log n)
+ * - Worst case: O(n log n) guaranteed by heapsort fallback
+ * - Space: O(log n) for recursion stack
+ * 
+ * @note NOT stable - equal elements may be reordered
+ * @note Requires RandomAccessIterator (compile-time enforced)
+ * 
+ * @example
+ * std::vector<int> arr = {3, 1, 4, 1, 5};
+ * rei::rei_sort(arr.begin(), arr.end());
  */
 template <std::random_access_iterator RandomIt, typename Compare = std::less<>>
 inline void rei_sort(RandomIt first, RandomIt last, Compare comp = Compare{}, bool detect_sorted = true) {
@@ -310,7 +354,16 @@ inline void rei_sort(RandomIt first, RandomIt last, Compare comp = Compare{}, bo
 }
 
 /**
- * Convenience: rei_sort for containers
+ * @brief Convenience overload for sorting entire containers
+ * @tparam Container Container type with begin() and end() (e.g., std::vector, std::array)
+ * @tparam Compare Comparison function object type (default: std::less<>)
+ * @param container Container to sort in-place
+ * @param comp Comparison function object (default: ascending order)
+ * @param detect_sorted Enable O(n) pre-scan for sorted/reversed data (default: true)
+ * 
+ * @example
+ * std::vector<int> v = {5, 2, 8, 1, 9};
+ * rei::rei_sort(v);
  */
 template <typename Container, typename Compare = std::less<>>
 inline void rei_sort(Container& container, Compare comp = Compare{}, bool detect_sorted = true) {
@@ -318,8 +371,26 @@ inline void rei_sort(Container& container, Compare comp = Compare{}, bool detect
 }
 
 /**
- * Convenience: rei_sort with projection (key function)
- * Uses Schwartzian transform (decorate-sort-undecorate) and in-place permutation
+ * @brief Sort by key extraction function using Schwartzian transform with in-place permutation
+ * @tparam RandomIt Random access iterator type (enforced by C++20 concept)
+ * @tparam KeyFunc Key extraction function type
+ * @tparam Compare Comparison function object type for keys (default: std::less<>)
+ * @param first Iterator to the beginning of the range to sort
+ * @param last Iterator to the end of the range to sort
+ * @param key_func Function extracting the key from each element: Key(const Value&)
+ * @param comp Comparison function for keys (default: ascending order)
+ * 
+ * @complexity 
+ * - Time: O(n log n) for sorting + O(n) for permutation
+ * - Space: O(n) for decorated array (pairs of key + index)
+ * 
+ * @note Memory optimized: Uses cycle decomposition for in-place permutation (no full copy)
+ * @note Key function called exactly once per element (Schwartzian transform)
+ * 
+ * @example
+ * struct Person { std::string name; int age; };
+ * std::vector<Person> people = ...;
+ * rei::rei_sort_by_key(people.begin(), people.end(), [](const Person& p) { return p.age; });
  */
 template <std::random_access_iterator RandomIt, typename KeyFunc, typename Compare = std::less<>>
 inline void rei_sort_by_key(RandomIt first, RandomIt last, KeyFunc key_func, Compare comp = Compare{}) {
